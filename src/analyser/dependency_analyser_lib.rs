@@ -1,7 +1,6 @@
-use std::collections::HashSet;
 use crate::common::types::ClassDepsReport;
 use tokio::{fs::File, io::AsyncReadExt};
-use tree_sitter::{Parser, Language, Node};
+use tree_sitter::{Parser, Language};
 
 pub async fn get_class_dependencies(class_src_file: String) -> Result<ClassDepsReport, String> {
     let mut file = match File::open(class_src_file).await {

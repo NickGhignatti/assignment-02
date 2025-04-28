@@ -1,4 +1,4 @@
-use std::fmt::{format, write, Display, Formatter};
+use std::fmt::{Display, Formatter};
 
 #[derive(Clone)]
 pub struct ClassDepsReport {
@@ -8,7 +8,7 @@ pub struct ClassDepsReport {
 }
 
 impl Display for ClassDepsReport {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut report: String = String::new();
 
         report.push_str(format!("========{}========\n", self.class_name).as_str());
