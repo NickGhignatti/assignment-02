@@ -149,9 +149,8 @@ fn collect_class_dependencies(class_node: &tree_sitter::Node, code: &str) -> Vec
         }
         if !cursor.goto_next_sibling() {
             // ascend until able to goto_next_sibling
-            // while cursor.goto_parent() && !cursor.goto_next_sibling() {}
-            // if cursor.node().is_missing() { break; }
-            break;
+            while cursor.goto_parent() && !cursor.goto_next_sibling() {}
+            if !cursor.goto_next_sibling() { break; }
         }
     }
 
