@@ -60,7 +60,6 @@ fn collect_all_classes(node: &tree_sitter::Node, code: &str) -> Vec<ClassDepsRep
             // gather in-class deps
             let file_dependencies = collect_file_imports(&node, code);
             let class_dependencies = filter_dependencies(collect_class_dependencies(&child, code));
-
             classes.push(ClassDepsReport {
                 class_name,
                 class_deps: [file_dependencies, class_dependencies].concat(),
@@ -128,9 +127,13 @@ fn collect_class_dependencies(class_node: &tree_sitter::Node, code: &str) -> Vec
     }
 
     // 3. fields, methods, params, new expressions
-    let mut cursor = class_node.walk();
-    loop {
-        let nd = cursor.node();
+    let cursor = class_node.child_by_field_name("body").expect("no body");
+
+    for i in 0..cursor.child_count() {
+        let nd = match cursor.child(i) {
+            Some(x) => x,
+            None => continue,
+        };
         match nd.kind() {
             "field_declaration"
             | "method_declaration"
@@ -143,14 +146,6 @@ fn collect_class_dependencies(class_node: &tree_sitter::Node, code: &str) -> Vec
                 }
             }
             _ => {}
-        }
-        if cursor.goto_first_child() {
-            continue;
-        }
-        if !cursor.goto_next_sibling() {
-            // ascend until able to goto_next_sibling
-            while cursor.goto_parent() && !cursor.goto_next_sibling() {}
-            if !cursor.goto_next_sibling() { break; }
         }
     }
 

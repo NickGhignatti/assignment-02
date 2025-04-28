@@ -1,9 +1,11 @@
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 class Test {
     private Set mySet = new HashSet<Integer>();
-    private HashSet mySet = new HashSet<Integer>();
+    private HashSet mySeta = new HashSet<Integer>();
+    private Integer mySetaa = 0;
 
     class Test2 {
 
@@ -16,6 +18,10 @@ class Test {
         void test() {
             System.out.println("Hello from Test2");
         }
+    }
+
+    class Test4 {
+        
     }
     
     public static void main(String[] args) {

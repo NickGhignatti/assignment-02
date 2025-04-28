@@ -15,7 +15,7 @@ fn get_string_with_nesting_level(class: ClassDepsReport, nes_level: i8) -> Strin
     }
 
     let mut report = String::new();
-    report.push_str(format!("{tab}{}\n", class.class_name).as_str());
+    report.push_str(format!("{tab}|{}\n", class.class_name).as_str());
     report.push_str(format!("{tab}|  dependencies:\n").as_str());
     for dep in class.class_deps {
         report.push_str(format!("{tab}|    {}\n", dep).as_str());
