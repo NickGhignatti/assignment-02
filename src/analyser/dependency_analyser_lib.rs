@@ -1,6 +1,6 @@
 use crate::common::types::ClassDepsReport;
 use tokio::{fs::File, io::AsyncReadExt};
-use tree_sitter::{Parser, Language};
+use tree_sitter::{Parser, Language, Node};
 
 pub async fn get_class_dependencies(class_src_file: String) -> Result<ClassDepsReport, String> {
     let mut file = match File::open(class_src_file).await {
@@ -164,4 +164,16 @@ fn filter_dependencies(dependencies: Vec<String>) -> Vec<String> {
     dependencies.into_iter()
         .filter(|ty| !prims.contains(&ty.as_str()))
         .collect()
+}
+
+fn resolve_field<'a>(node: Node<'a>, fields: Vec<&'a str>) -> Result<Node<'a>, String> {
+    let mut return_node: Node = node.clone();
+    for f in fields {
+        if let Some(n) = return_node.child_by_field_name(f) {
+            return_node = n;
+        } else {
+            return Err("Some of the fields name are wrong!".parse().unwrap());
+        }
+    }
+    Ok(return_node)
 }

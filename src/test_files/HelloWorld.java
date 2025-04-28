@@ -4,12 +4,14 @@ import java.util.Set;
 
 class Test {
     private Set mySet = new HashSet<Integer>();
-    private HashSet mySeta = new HashSet<Integer>();
     private Integer mySetaa = 0;
 
     class Test2 {
+        private Boolean isRunning = true;
 
         class Test3{
+            private Integer count = 0;
+
             void anotherTest() {
                 System.out.println("Hello from Test3");
             }
