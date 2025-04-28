@@ -140,8 +140,11 @@ fn collect_class_dependencies(class_node: &tree_sitter::Node, code: &str) -> Vec
             | "constructor_declaration"
             | "object_creation_expression" => {
                 if let Some(t) = nd.child_by_field_name("type")
-                    .or_else(|| nd.child_by_field_name("type_identifier"))
                 {
+                    match resolve_field(nd, vec!["declarator", "value", "type"]) {
+                        Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
+                        Err(_) => (),
+                    }
                     deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
                 }
             }
