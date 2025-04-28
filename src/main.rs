@@ -8,7 +8,11 @@ async fn main() {
     println!("Starting program:");
 
     match get_class_dependencies("src/test_files/HelloWorld.java".to_string()).await {
-        Ok(report) => println!("{}", report),
+        Ok(report) => {
+            for r in report {
+                println!("{r}");
+            }
+        },
         Err(e) => eprintln!("Error: {}", e),
     }
 }

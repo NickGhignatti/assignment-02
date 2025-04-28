@@ -2,7 +2,7 @@ use crate::common::types::ClassDepsReport;
 use tokio::{fs::File, io::AsyncReadExt};
 use tree_sitter::{Parser, Language, Node};
 
-pub async fn get_class_dependencies(class_src_file: String) -> Result<ClassDepsReport, String> {
+pub async fn get_class_dependencies(class_src_file: String) -> Result<Vec<ClassDepsReport>, String> {
     let mut file = match File::open(class_src_file).await {
         Ok(file) => file,
         Err(e) => return Err(format!("Failed to open file: {}", e)),
@@ -27,10 +27,7 @@ pub async fn get_class_dependencies(class_src_file: String) -> Result<ClassDepsR
 
     let classes = collect_all_classes(&root, &contents);
 
-    match classes.len() {
-        0 => Err(String::new()),
-        _ => Ok(classes[0].clone()),
-    }
+    Ok(classes)
 }
 
 /// Recursively collects all classes that are children of the node (with depth 0 so direct).
