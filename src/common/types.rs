@@ -11,7 +11,7 @@ fn get_string_with_nesting_level(class: ClassDepsReport, nes_level: i8) -> Strin
     let mut tab = String::new();
 
     for _ in 0..nes_level {
-        tab.push_str("  ");
+        tab.push_str("|    ");
     }
 
     let mut report = String::new();
@@ -22,10 +22,10 @@ fn get_string_with_nesting_level(class: ClassDepsReport, nes_level: i8) -> Strin
     }
     report.push_str(format!("{tab}|  nested classes:\n").as_str());
     for nes_class in class.nested_classes {
-        let nes_class_string = get_string_with_nesting_level(nes_class, nes_level+2);
+        let nes_class_string = get_string_with_nesting_level(nes_class, nes_level+1);
         report.push_str(format!("{nes_class_string}\n").as_str());
     }
-    report.push_str(format!("{tab}==========").as_str());
+    report.push_str(format!("{tab}|==========").as_str());
     report
 }
 
