@@ -22,3 +22,5 @@ class Test {
         System.out.println("Hello, World!");
     }
 }
+
+class TestX {}
