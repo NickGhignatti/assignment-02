@@ -2,13 +2,14 @@ import java.util.ArrayList;
 import java.util.Set;
 
 class Test {
-    private Set mySet = new HashSet<Int>();
+    private Set mySet = new HashSet<Integer>();
+    private HashSet mySet = new HashSet<Integer>();
 
     class Test2 {
 
         class Test3{
             void anotherTest() {
-                System.out.println("Hello from Test3")
+                System.out.println("Hello from Test3");
             }
         }
 

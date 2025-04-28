@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use crate::common::types::ClassDepsReport;
 use tokio::{fs::File, io::AsyncReadExt};
 use tree_sitter::{Parser, Language};
@@ -28,9 +27,10 @@ pub async fn get_class_dependencies(class_src_file: String) -> Result<ClassDepsR
 
     let classes = collect_all_classes(&root, &contents);
 
-    println!("{}", classes[0]);
-
-    Err("Not implemented yet".to_string())
+    match classes.len() {
+        0 => Err(String::new()),
+        _ => Ok(classes[0].clone()),
+    }
 }
 
 /// Recursively collects all classes that are children of the node (with depth 0 so direct).
@@ -63,7 +63,7 @@ fn collect_all_classes(node: &tree_sitter::Node, code: &str) -> Vec<ClassDepsRep
 
             classes.push(ClassDepsReport {
                 class_name,
-                class_deps: class_dependencies,
+                class_deps: [file_dependencies, class_dependencies].concat(),
                 nested_classes: nested,
             });
         }
@@ -149,8 +149,9 @@ fn collect_class_dependencies(class_node: &tree_sitter::Node, code: &str) -> Vec
         }
         if !cursor.goto_next_sibling() {
             // ascend until able to goto_next_sibling
-            while cursor.goto_parent() && !cursor.goto_next_sibling() {}
-            if cursor.node().is_missing() { break; }
+            // while cursor.goto_parent() && !cursor.goto_next_sibling() {}
+            // if cursor.node().is_missing() { break; }
+            break;
         }
     }
 

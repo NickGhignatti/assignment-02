@@ -1,4 +1,4 @@
-use std::fmt::{format, write, Display, Formatter};
+use std::fmt::{Display, Formatter};
 
 #[derive(Clone)]
 pub struct ClassDepsReport {
@@ -7,26 +7,30 @@ pub struct ClassDepsReport {
     pub nested_classes: Vec<ClassDepsReport>
 }
 
+fn get_string_with_nesting_level(class: ClassDepsReport, nes_level: i8) -> String {
+    let mut tab = String::new();
+
+    for _ in 0..nes_level {
+        tab.push_str("  ");
+    }
+
+    let mut report = String::new();
+    report.push_str(format!("{tab}{}\n", class.class_name).as_str());
+    report.push_str(format!("{tab}|  dependencies:\n").as_str());
+    for dep in class.class_deps {
+        report.push_str(format!("{tab}|    {}\n", dep).as_str());
+    }
+    report.push_str(format!("{tab}|  nested classes:\n").as_str());
+    for nes_class in class.nested_classes {
+        let nes_class_string = get_string_with_nesting_level(nes_class, nes_level+2);
+        report.push_str(format!("{nes_class_string}\n").as_str());
+    }
+    report.push_str(format!("{tab}==========").as_str());
+    report
+}
+
 impl Display for ClassDepsReport {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut report: String = String::new();
-
-        report.push_str(format!("========{}========\n", self.class_name).as_str());
-
-        let class_dependencies = "dependencies: \n";
-        report.push_str(class_dependencies);
-        for dep in self.class_deps.clone() {
-            report.push_str(format!("{} \n", dep).as_str())
-        }
-
-        let nested_classes = "nested classes: \n";
-        report.push_str(nested_classes);
-        for nested_class in self.nested_classes.clone() {
-            report.push_str(format!("{} \n", nested_class.to_string()).as_str())
-        }
-
-        report.push_str(format!("========{}========", self.class_name).as_str());
-
-        write!(f, "{}", report)
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", get_string_with_nesting_level(self.clone(), 0))
     }
 }
