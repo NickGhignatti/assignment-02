@@ -1,4 +1,5 @@
-use crate::common::types::ClassDepsReport;
+use std::fs::read_dir;
+use crate::common::types::{ClassDepsReport, PackageDepsReport};
 use tokio::{fs::File, io::AsyncReadExt};
 use tree_sitter::{Parser, Language, Node};
 
@@ -33,8 +34,7 @@ pub async fn get_class_dependencies(class_src_file: String) -> Result<ClassDepsR
     }
 }
 
-/// Recursively collects all classes that are children of the node (with depth 0 so direct).
-fn collect_all_classes(node: &tree_sitter::Node, code: &str) -> Vec<ClassDepsReport> {
+fn collect_all_classes(node: &Node, code: &str) -> Vec<ClassDepsReport> {
     let mut classes = Vec::new();
 
     // Iterate only over *named* children of `node`
@@ -71,7 +71,7 @@ fn collect_all_classes(node: &tree_sitter::Node, code: &str) -> Vec<ClassDepsRep
     classes
 }
 
-fn collect_file_imports(root: &tree_sitter::Node, code: &str) -> Vec<String> {
+fn collect_file_imports(root: &Node, code: &str) -> Vec<String> {
     let mut dependencies = Vec::new();
 
     for i in 0..root.named_child_count() {
@@ -109,7 +109,7 @@ fn collect_file_imports(root: &tree_sitter::Node, code: &str) -> Vec<String> {
     dependencies
 }
 
-fn collect_class_dependencies(class_node: &tree_sitter::Node, code: &str) -> Vec<String> {
+fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
     let mut deps = Vec::new();
 
     // 1. extends
@@ -176,4 +176,32 @@ fn resolve_field<'a>(node: Node<'a>, fields: Vec<&'a str>) -> Result<Node<'a>, S
         }
     }
     Ok(return_node)
+}
+
+pub async fn get_package_dependencies(package_folder: String) -> Result<PackageDepsReport, String> {
+    let paths = match read_dir(package_folder.clone()) {
+        Ok(p) => p,
+        _ => return Err(String::from("Invalid folder"))
+    };
+
+    let p_folder = package_folder.clone();
+    let mut dependencies: Vec<String> = Vec::new();
+    for path in paths {
+        let file_name = path.unwrap().file_name().into_string().unwrap();
+        let file = format!("{p_folder}/{file_name}");
+        match get_class_dependencies(file).await {
+            Ok(mut r) => {
+                dependencies.append(& mut r.class_deps);
+            }
+            Err(e) => println!("Err in for {}", e),
+        }
+    }
+
+    dependencies.sort();
+    dependencies.dedup();
+
+    Ok(PackageDepsReport {
+        package_name: package_folder,
+        package_deps: dependencies
+    })
 }

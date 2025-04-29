@@ -34,3 +34,9 @@ impl Display for ClassDepsReport {
         write!(f, "{}", get_string_with_nesting_level(self.clone(), 0))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct PackageDepsReport {
+    pub package_name: String,
+    pub package_deps: Vec<String>
+}
