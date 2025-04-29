@@ -3,7 +3,7 @@ use crate::common::types::{ClassDepsReport, PackageDepsReport};
 use tokio::{fs::File, io::AsyncReadExt};
 use tree_sitter::{Parser, Language, Node};
 
-pub async fn get_class_dependencies(class_src_file: String) -> Result<ClassDepsReport, String> {
+pub async fn get_class_dependencies(class_src_file: String) -> Result<Vec<ClassDepsReport>, String> {
     let mut file = match File::open(class_src_file).await {
         Ok(file) => file,
         Err(e) => return Err(format!("Failed to open file: {}", e)),
@@ -28,10 +28,7 @@ pub async fn get_class_dependencies(class_src_file: String) -> Result<ClassDepsR
 
     let classes = collect_all_classes(&root, &contents);
 
-    match classes.len() {
-        0 => Err(String::new()),
-        _ => Ok(classes[0].clone()),
-    }
+    Ok(classes)
 }
 
 fn collect_all_classes(node: &Node, code: &str) -> Vec<ClassDepsReport> {
@@ -140,8 +137,11 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
             | "constructor_declaration"
             | "object_creation_expression" => {
                 if let Some(t) = nd.child_by_field_name("type")
-                    .or_else(|| nd.child_by_field_name("type_identifier"))
                 {
+                    match resolve_field(nd, vec!["declarator", "value", "type"]) {
+                        Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
+                        Err(_) => (),
+                    }
                     deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
                 }
             }
