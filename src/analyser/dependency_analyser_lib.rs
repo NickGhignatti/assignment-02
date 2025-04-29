@@ -190,8 +190,10 @@ pub async fn get_package_dependencies(package_folder: String) -> Result<PackageD
         let file_name = path.unwrap().file_name().into_string().unwrap();
         let file = format!("{p_folder}/{file_name}");
         match get_class_dependencies(file).await {
-            Ok(mut r) => {
-                dependencies.append(& mut r.class_deps);
+            Ok(classes) => {
+                for mut class in classes {
+                    dependencies.append(&mut class.class_deps);
+                }
             }
             Err(e) => println!("Err in for {}", e),
         }

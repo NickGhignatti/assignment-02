@@ -36,6 +36,7 @@ impl Display for ClassDepsReport {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct PackageDepsReport {
     pub package_name: String,
     pub package_deps: Vec<String>
