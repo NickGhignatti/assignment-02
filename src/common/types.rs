@@ -7,6 +7,18 @@ pub struct ClassDepsReport {
     pub nested_classes: Vec<ClassDepsReport>
 }
 
+impl ClassDepsReport {
+    pub fn get_dependencies(&self) -> Vec<String> {
+        let mut dependencies: Vec<String> = self.class_deps.clone();
+        for nes_class in self.nested_classes.clone() {
+            dependencies.append(&mut nes_class.get_dependencies());
+        }
+        dependencies.sort();
+        dependencies.dedup();
+        dependencies
+    }
+}
+
 fn get_string_with_nesting_level(class: ClassDepsReport, nes_level: i8) -> String {
     let mut tab = String::new();
 
@@ -40,4 +52,11 @@ impl Display for ClassDepsReport {
 pub struct PackageDepsReport {
     pub package_name: String,
     pub package_deps: Vec<String>
+}
+
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct ProjectDepsReport {
+    pub project_folder: String,
+    pub project_deps: Vec<String>
 }

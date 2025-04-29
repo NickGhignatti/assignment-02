@@ -1,7 +1,8 @@
 use std::fs::read_dir;
-use crate::common::types::{ClassDepsReport, PackageDepsReport};
+use crate::common::types::{ClassDepsReport, PackageDepsReport, ProjectDepsReport};
 use tokio::{fs::File, io::AsyncReadExt};
 use tree_sitter::{Parser, Language, Node};
+use walkdir::WalkDir;
 
 pub async fn get_class_dependencies(class_src_file: String) -> Result<Vec<ClassDepsReport>, String> {
     let mut file = match File::open(class_src_file).await {
@@ -188,14 +189,16 @@ pub async fn get_package_dependencies(package_folder: String) -> Result<PackageD
     let mut dependencies: Vec<String> = Vec::new();
     for path in paths {
         let file_name = path.unwrap().file_name().into_string().unwrap();
-        let file = format!("{p_folder}/{file_name}");
-        match get_class_dependencies(file).await {
-            Ok(classes) => {
-                for mut class in classes {
-                    dependencies.append(&mut class.class_deps);
+        if file_name.contains(".java") {
+            let file = format!("{p_folder}/{file_name}");
+            match get_class_dependencies(file).await {
+                Ok(classes) => {
+                    for mut class in classes {
+                        dependencies.append(&mut class.class_deps);
+                    }
                 }
+                Err(e) => println!("Err in getting package deps: {} for file {}", e, file_name),
             }
-            Err(e) => println!("Err in for {}", e),
         }
     }
 
@@ -205,5 +208,28 @@ pub async fn get_package_dependencies(package_folder: String) -> Result<PackageD
     Ok(PackageDepsReport {
         package_name: package_folder,
         package_deps: dependencies
+    })
+}
+
+pub async fn get_project_dependencies(project_folder: String) -> Result<ProjectDepsReport, String> {
+    let mut dependencies: Vec<String> = Vec::new();
+    for entry in WalkDir::new(project_folder.clone()).into_iter().filter_map(|e| e.ok()) {
+        let file_name = entry.path().file_name().unwrap().to_str().unwrap();
+        if entry.path().is_file() && file_name.contains(".java") {
+            match get_class_dependencies(entry.path().to_str().unwrap().to_string()).await {
+                Ok(vector) => for c in vector {
+                    dependencies.append(&mut c.get_dependencies());
+                },
+                Err(e) => return Err(e)
+            }
+        }
+    }
+
+    dependencies.sort();
+    dependencies.dedup();
+
+    Ok(ProjectDepsReport {
+        project_folder,
+        project_deps: dependencies
     })
 }
