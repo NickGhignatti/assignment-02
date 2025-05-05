@@ -134,7 +134,6 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
         };
         match nd.kind() {
             "field_declaration"
-            | "method_declaration"
             | "constructor_declaration"
             | "object_creation_expression" => {
                 if let Some(t) = nd.child_by_field_name("type")
@@ -145,7 +144,56 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
                     }
                     deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
                 }
-            }
+            },
+            "method_declaration" => {
+
+                if let Some(t) = nd.child_by_field_name("type")
+                {
+                    match resolve_field(nd, vec!["declarator", "value", "type"]) {
+                        Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
+                        Err(_) => (),
+                    }
+                    deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
+                }
+
+                if let Some(meth_body) = nd.child_by_field_name("body") {
+                    for j in 0..meth_body.child_count() {
+                        println!("Expressions => {:?}", meth_body.child(j).unwrap().kind());
+                        let body_field = match meth_body.child(j) {
+                            Some(x) => x,
+                            None => continue,
+                        };
+                        match body_field.kind() {
+                           "local_variable_declaration"
+                            | "return_statement" => {
+                                if let Some(t) = body_field.child_by_field_name("type")
+                                {
+                                    match resolve_field(body_field, vec!["declarator", "value", "type"]) {
+                                        Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
+                                        Err(_) => (),
+                                    }
+                                    deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
+                                }
+                            },
+                            "expression_statement" => {
+                                println!("\tInside expression statement");
+                                if let Some(exp_stmt) = body_field.child(0) {
+                                    println!("non ho capi {:?}", exp_stmt.utf8_text(code.as_bytes()).unwrap().to_string());
+                                }
+                                for i in 0..body_field.child_count() {
+                                    println!("{:?}", body_field.child(i));
+                                    if body_field.child(i).unwrap().kind() == "method_invocation" {
+                                    
+                                        println!("{:?}", body_field.child(i).unwrap().child_by_field_name("declarator").unwrap());
+                                    }
+                                }
+                            }
+                            _ => ()
+                        }
+                        // println!("{:?}", body_field);
+                    }
+                }
+            },
             _ => {}
         }
     }

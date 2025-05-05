@@ -8,7 +8,7 @@ use crate::analyser::dependency_analyser_lib::{get_package_dependencies, get_pro
 async fn main() {
     println!("Starting program:");
 
-    match get_class_dependencies("src/test_files/HelloWorld.java".to_string()).await {
+    match get_class_dependencies("src/test_files/src/main/java/pcd/ass02/MyClass.java".to_string()).await {
         Ok(report) => {
             for r in report {
                 println!("{r}");
@@ -17,12 +17,12 @@ async fn main() {
         Err(e) => eprintln!("Error: {}", e),
     }
 
-    match get_package_dependencies("src/test_files".to_string()).await {
-        Ok(report) => println!("{:?}", report),
-        Err(e) => println!("{}", e)
-    }
-    match get_project_dependencies("src/test_files".to_string()).await {
-        Ok(report) => println!("{:?}", report),
-        Err(e) => println!("{}", e)
-    }
+    // match get_package_dependencies("src/test_files".to_string()).await {
+    //     Ok(report) => println!("{:?}", report),
+    //     Err(e) => println!("{}", e)
+    // }
+    // match get_project_dependencies("src/test_files".to_string()).await {
+    //     Ok(report) => println!("{:?}", report),
+    //     Err(e) => println!("{}", e)
+    // }
 }
