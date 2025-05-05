@@ -136,29 +136,12 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
             "field_declaration"
             | "constructor_declaration"
             | "object_creation_expression" => {
-                if let Some(t) = nd.child_by_field_name("type")
-                {
-                    match resolve_field(nd, vec!["declarator", "value", "type"]) {
-                        Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
-                        Err(_) => (),
-                    }
-                    deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
-                }
+                deps = get_and_add_dep_from_child_name(nd, String::from("type"), deps, code);
             },
             "method_declaration" => {
-
-                if let Some(t) = nd.child_by_field_name("type")
-                {
-                    match resolve_field(nd, vec!["declarator", "value", "type"]) {
-                        Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
-                        Err(_) => (),
-                    }
-                    deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
-                }
-
+                deps = get_and_add_dep_from_child_name(nd, String::from("type"), deps, code);
                 if let Some(meth_body) = nd.child_by_field_name("body") {
                     for j in 0..meth_body.child_count() {
-                        println!("Expressions => {:?}", meth_body.child(j).unwrap().kind());
                         let body_field = match meth_body.child(j) {
                             Some(x) => x,
                             None => continue,
@@ -166,14 +149,7 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
                         match body_field.kind() {
                            "local_variable_declaration"
                             | "return_statement" => {
-                                if let Some(t) = body_field.child_by_field_name("type")
-                                {
-                                    match resolve_field(body_field, vec!["declarator", "value", "type"]) {
-                                        Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
-                                        Err(_) => (),
-                                    }
-                                    deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
-                                }
+                               deps = get_and_add_dep_from_child_name(body_field, String::from("type"), deps, code);
                             },
                             "expression_statement" => {
                                 for i in 0..body_field.child_count() {
@@ -182,15 +158,7 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
                                         for j in 0..expression_node.child_count() {
                                             let obj_creation_node = expression_node.child(j).unwrap();
                                             if obj_creation_node.kind() == "object_creation_expression" {
-                                                if let Some(t) = obj_creation_node.child_by_field_name("type")
-                                                {
-                                                    match resolve_field(obj_creation_node, vec!["declarator", "value", "type"]) {
-                                                        Ok(x) =>
-                                                            deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
-                                                        Err(_) => (),
-                                                    }
-                                                    deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
-                                                }
+                                                deps = get_and_add_dep_from_child_name(obj_creation_node, String::from("type"), deps, code);
                                             }
                                         }
                                     }
@@ -207,6 +175,18 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
 
     deps.sort();
     deps.dedup();
+    deps
+}
+
+fn get_and_add_dep_from_child_name(node: Node, child_name: String, mut deps: Vec<String>, code: &str) -> Vec<String> {
+    if let Some(t) = node.child_by_field_name(child_name)
+    {
+        match resolve_field(node, vec!["declarator", "value", "type"]) {
+            Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
+            Err(_) => (),
+        }
+        deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
+    }
     deps
 }
 
