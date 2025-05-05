@@ -156,9 +156,24 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
                     deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
                 }
 
+                if let Some(p) = nd.child_by_field_name("parameters")
+                {
+                    for x in 0..p.child_count() {
+                        if p.child(x).unwrap().kind() == "formal_parameter" {
+                            if let Some(t) = p.child(x).unwrap().child_by_field_name("type")
+                            {
+                                match resolve_field(t, vec!["declarator", "value", "type"]) {
+                                    Ok(x) => deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
+                                    Err(_) => (),
+                                }
+                                deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
+                            }
+                        }
+                    }
+                }
+
                 if let Some(meth_body) = nd.child_by_field_name("body") {
                     for j in 0..meth_body.child_count() {
-                        println!("Expressions => {:?}", meth_body.child(j).unwrap().kind());
                         let body_field = match meth_body.child(j) {
                             Some(x) => x,
                             None => continue,
