@@ -176,21 +176,28 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
                                 }
                             },
                             "expression_statement" => {
-                                println!("\tInside expression statement");
-                                if let Some(exp_stmt) = body_field.child(0) {
-                                    println!("non ho capi {:?}", exp_stmt.utf8_text(code.as_bytes()).unwrap().to_string());
-                                }
                                 for i in 0..body_field.child_count() {
-                                    println!("{:?}", body_field.child(i));
-                                    if body_field.child(i).unwrap().kind() == "method_invocation" {
-                                    
-                                        println!("{:?}", body_field.child(i).unwrap().child_by_field_name("declarator").unwrap());
+                                    let expression_node = body_field.child(i).unwrap();
+                                    if expression_node.kind() == "method_invocation" {
+                                        for j in 0..expression_node.child_count() {
+                                            let obj_creation_node = expression_node.child(j).unwrap();
+                                            if obj_creation_node.kind() == "object_creation_expression" {
+                                                if let Some(t) = obj_creation_node.child_by_field_name("type")
+                                                {
+                                                    match resolve_field(obj_creation_node, vec!["declarator", "value", "type"]) {
+                                                        Ok(x) =>
+                                                            deps.push(x.utf8_text(code.as_bytes()).unwrap().to_string()),
+                                                        Err(_) => (),
+                                                    }
+                                                    deps.push(t.utf8_text(code.as_bytes()).unwrap().to_string());
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
                             _ => ()
                         }
-                        // println!("{:?}", body_field);
                     }
                 }
             },
