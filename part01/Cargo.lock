@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "assignment-02"
+name = "assignment-02-part01"
 version = "0.1.0"
 dependencies = [
  "once_cell",
