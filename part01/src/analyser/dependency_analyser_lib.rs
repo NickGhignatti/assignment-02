@@ -139,6 +139,16 @@ fn collect_class_dependencies(class_node: &Node, code: &str) -> Vec<String> {
                 deps = get_and_add_dep_from_child_name(nd, String::from("type"), deps, code);
             },
             "method_declaration" => {
+
+                if let Some(p) = nd.child_by_field_name("parameters")
+                {
+                    for x in 0..p.child_count() {
+                        if p.child(x).unwrap().kind() == "formal_parameter" {
+                            deps = get_and_add_dep_from_child_name(p.child(x).unwrap(), String::from("type"), deps, code);
+                        }
+                    }
+                }
+
                 deps = get_and_add_dep_from_child_name(nd, String::from("type"), deps, code);
                 if let Some(meth_body) = nd.child_by_field_name("body") {
                     for j in 0..meth_body.child_count() {
