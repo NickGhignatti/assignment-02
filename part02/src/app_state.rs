@@ -1,35 +1,74 @@
-use iced::Element;
+use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
+
+use iced::futures::stream;
+use iced::{Element, Subscription, Task};
 use iced::widget::{button, text_input, Column, Row, Text};
+use crate::dependency::build_dependency_graph;
+use tokio::sync::watch;
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    GetDependency,
+    UpdateInputVal(String),
     AskDependency,
-    InputChanged,
-    AnalyzePressed,
+    DependencyReceived(Result<(), String>),
+    ProjectDependenciesUpdated,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone)]
 pub struct AppState {
-    project_dependencies: Vec<(String, String)>,
-    input_value: String
+    project_dependencies: Arc<RwLock<Vec<(String, String)>>>,
+    input_value: String,
+    notifier: watch::Sender<()>,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self { 
+            project_dependencies: Default::default(), 
+            input_value: Default::default(), 
+            notifier: watch::channel(()).0,
+        }
+    }
 }
 
 impl AppState {
+
+    pub fn subscription(&self) -> Subscription<Message> {
+        let receiver = self.notifier.subscribe();
+    
+        Subscription::run_with_id(
+            (),
+            (move || {
+                stream::unfold(receiver, |mut receiver| async move {
+                    match receiver.changed().await {
+                        Ok(_) => Some((Message::ProjectDependenciesUpdated, receiver)),
+                        Err(_) => None
+                    }
+                })
+            })()
+        )
+    }
+
     pub fn view<'a>(&self) -> Element<'_, Message> {
         let mut view_struct = Column::new();
 
         // 1) Top row: input + button
         let mut top_row = Row::new().spacing(5).padding(8);
-        top_row = top_row.push(text_input("Enter project path...", &self.input_value));
-        top_row = top_row.push(button("Analyze").on_press(Message::AskDependency));
+        top_row = top_row.push(text_input("Enter project path...", &self.input_value).on_input(|x| Message::UpdateInputVal(x)));
+        top_row = top_row.push(
+            match self.input_value.is_empty() {
+                true => button("Analyze"),
+                false => button("Analyze").on_press(Message::AskDependency),
+            }
+        );
 
         view_struct = view_struct.push(top_row);
 
         // 2) Scrollable list of dependencies
         let mut deps_column = Column::new().spacing(5).padding(10);
 
-        for (to, into) in self.project_dependencies.clone() {
+        for (to, into) in self.project_dependencies.read().unwrap().clone() {
             let s = format!("{to} -> {into}");
             deps_column = deps_column.push(Text::new(s));
         }
@@ -39,15 +78,27 @@ impl AppState {
         view_struct.into()
     }
 
-    pub fn update(&mut self, message: Message) {
+    pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::GetDependency => {}
-            Message::AskDependency => {
-                for _ in 0..10 {
-                    self.project_dependencies.push(("A".to_string(), "B".to_string()));
-                }
+            Message::UpdateInputVal(x) => {
+                self.input_value = x;
+                Task::none()
             }
-            _ => {}
+            Message::AskDependency => {
+                let path = PathBuf::from(self.input_value.clone());
+                if !path.exists() {
+                    return Task::none();
+                }
+                
+                let deps_borr = self.project_dependencies.clone();
+                let notifier_borr = self.notifier.clone();
+
+                Task::perform(async move {
+                    build_dependency_graph(path.clone(), deps_borr, notifier_borr).await
+                }, Message::DependencyReceived)
+            }
+            Message::DependencyReceived(_res) => Task::none(),
+            Message::ProjectDependenciesUpdated => Task::none()
         }
     }
 }
