@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use xmltree::{Element as XMLElement, XMLNode};
@@ -20,7 +21,7 @@ pub enum Message {
 
 #[derive(Clone)]
 pub struct AppState {
-    project_dependencies: Arc<RwLock<Vec<(String, String)>>>,
+    project_dependencies: Arc<RwLock<HashSet<(String, String)>>>,
     input_value: String,
     notifier: watch::Sender<()>,
     handle: Option<iced::widget::svg::Handle>,
@@ -81,8 +82,17 @@ impl AppState {
             }
         };
 
-        let scroll = Scrollable::new(Column::new().push(deps_column).push(displayed_image));
-        container(Column::new().push(top_row).push(scroll).spacing(10))
+        let scroll = Scrollable::new(deps_column)
+            .height(Length::Fill)
+            .width(Length::Fill)
+            .spacing(10);
+
+        let scroll_image = Scrollable::new(displayed_image) 
+            .height(Length::Fill)
+            .width(Length::Fill)
+            .spacing(10);
+
+        container(Column::new().push(top_row).push(scroll_image).push(scroll).spacing(10))
             .width(Length::Fill)
             .height(Length::Fill)
             .padding(20)
@@ -159,9 +169,9 @@ fn process_element(elem: &mut XMLElement) {
     });
 }
 
-async fn image_generation(project_dependencies: Arc<RwLock<Vec<(String, String)>>>) -> iced::widget::svg::Handle {
+async fn image_generation(project_dependencies: Arc<RwLock<HashSet<(String, String)>>>) -> iced::widget::svg::Handle {
     let mermaid = Mermaid::new().unwrap();
-    let mut graph = String::from("graph TD\n");
+    let mut graph = String::from("graph LR\n");
     for el in project_dependencies.read().unwrap().iter() {
         graph.push_str(&format!("{} --> {}\n", el.0, el.1));
     }

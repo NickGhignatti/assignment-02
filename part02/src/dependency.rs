@@ -24,7 +24,7 @@ lazy_static! {
 /// Walk directory, find .java files, and build the graph
 pub async fn build_dependency_graph(
     root: PathBuf, 
-    project_dependencies: Arc<RwLock<Vec<(String, String)>>>, 
+    project_dependencies: Arc<RwLock<HashSet<(String, String)>>>, 
     watcher: tokio::sync::watch::Sender<()>) -> Result<(), String> {
 
     // Regex for package/import
@@ -80,7 +80,7 @@ async fn process_java_file(
     new_re: &Regex,
     decl_re: &Regex,
     sig_re: &Regex,
-    project_dependencies: Arc<RwLock<Vec<(String, String)>>>, 
+    project_dependencies: Arc<RwLock<HashSet<(String, String)>>>, 
     watcher: tokio::sync::watch::Sender<()>
 ) -> io::Result<()> {
     let file = File::open(path)?;
@@ -168,7 +168,7 @@ async fn send_update(
     package: String,
     class_name: String, 
     ty: String,
-    project_dependencies: Arc<RwLock<Vec<(String, String)>>>, 
+    project_dependencies: Arc<RwLock<HashSet<(String, String)>>>, 
     watcher: tokio::sync::watch::Sender<()>) {
 
     let fqcn = if package.is_empty() {
@@ -178,7 +178,7 @@ async fn send_update(
     };
     {
         let mut deps = project_dependencies.write().unwrap();
-        deps.push((fqcn, ty));
+        deps.insert((fqcn, ty));
     }
     watcher.send(()).unwrap_or_else(|_| ());
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
