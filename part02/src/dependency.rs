@@ -12,7 +12,7 @@ lazy_static! {
             // primitives
             "int","long","short","byte","char","float","double","boolean","void",
             // keywords
-            "new","return","public","protected","private","static","final","abstract",
+            "new","return","public","protected","private","static","final","abstract", "var", "method",
             // control flow
             "if","else","for","while","switch","case","default","break","continue",
             "try","catch","finally","throw","throws","synchronized",

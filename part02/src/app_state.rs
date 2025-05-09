@@ -24,7 +24,7 @@ pub struct AppState {
     project_dependencies: Arc<RwLock<HashSet<(String, String)>>>,
     input_value: String,
     notifier: watch::Sender<()>,
-    handle: Option<iced::widget::svg::Handle>,
+    handle: Option<svg::Handle>,
 }
 
 impl Default for AppState {
@@ -169,10 +169,13 @@ fn process_element(elem: &mut XMLElement) {
     });
 }
 
-async fn image_generation(project_dependencies: Arc<RwLock<HashSet<(String, String)>>>) -> iced::widget::svg::Handle {
+async fn image_generation(project_dependencies: Arc<RwLock<HashSet<(String, String)>>>) -> svg::Handle {
     let mermaid = Mermaid::new().unwrap();
     let mut graph = String::from("graph LR\n");
     for el in project_dependencies.read().unwrap().iter() {
+        if el.0.contains("\"") || el.1.contains("\"") {
+            continue;
+        }
         graph.push_str(&format!("{} --> {}\n", el.0, el.1));
     }
     let svg = mermaid.render(&graph).unwrap();
@@ -180,5 +183,5 @@ async fn image_generation(project_dependencies: Arc<RwLock<HashSet<(String, Stri
     process_element(&mut root);
     let mut output = Vec::new();
     root.write(&mut output).unwrap();
-    iced::widget::svg::Handle::from_memory(output)
+    svg::Handle::from_memory(output)
 }
