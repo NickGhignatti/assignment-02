@@ -1,8 +1,11 @@
+use std::fs::File;
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
+use iced::advanced::Widget;
 use iced::{Element, Length, Subscription, Task};
-use iced::widget::{button, container, text_input, Column, Row, Scrollable, Text};
+use iced::widget::{button, container, svg, text_input, Column, Row, Scrollable, Text};
 use crate::dependency::build_dependency_graph;
 use iced::futures::stream;
 use iced::advanced::image::{Handle};
@@ -66,11 +69,6 @@ impl AppState {
                 false => button("Analyze").on_press(Message::AskDependency),
             }
         );
-        let mermaid = Mermaid::new().unwrap();
-        let svg= mermaid.render("flowchart TD\na --> b\n").unwrap();
-        let boxed_bytes = svg.into_bytes().into_boxed_slice();
-        let static_bytes: &'static [u8] = Box::leak(boxed_bytes);
-        let handle = Handle::from_bytes(static_bytes);
 
         // 2) Scrollable list of dependencies
 
@@ -79,11 +77,23 @@ impl AppState {
             // deps_column = deps_column.push(Text::new(s));
         }
 
+        let mermaid = Mermaid::new().unwrap();
+        let svg= mermaid.render("flowchart TD\na --> b\n").unwrap();
+        //File::create("aa.svg").unwrap().write_all(svg.as_bytes()).unwrap();
+        /*let boxed_bytes = svg.into_bytes().into_boxed_slice();
+        let static_bytes: &'static [u8] = Box::leak(boxed_bytes);
+        let handle = Handle::from_bytes(static_bytes);
+*/
+        let svg_bytes = svg.into_bytes();
+        let handle = svg::Handle::from_memory(svg_bytes);
+
+        let displayed_image = iced::widget::svg(handle);
+
         // let scroll = Scrollable::new(deps_column)
         //     .width(Length::Fill)
         //     .height(Length::Fill);
 
-        container(Column::new().push(top_row).push(Image::new(handle)).spacing(10))
+        container(Column::new().push(top_row).push(displayed_image).spacing(10))
             .width(Length::Fill)
             .height(Length::Fill)
             .padding(20)

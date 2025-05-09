@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-iced = {version = "0.13.1", features = ["canvas", "tokio", "advanced", "image"]}
+iced = {version = "0.13.1", features = ["canvas", "tokio", "advanced", "image", "svg"]}
 rxrust = "1.0.0-beta.0"
 regex = "1.11.1"
 walkdir = "2.5.0"
