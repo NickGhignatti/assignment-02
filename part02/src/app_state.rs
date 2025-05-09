@@ -1,11 +1,15 @@
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
-use iced::futures::stream;
-use iced::{Element, Subscription, Task};
-use iced::widget::{button, text_input, Column, Row, Text};
 use crate::dependency::build_dependency_graph;
+use iced::futures::stream;
+use iced::widget::{button, text_input, Column, Row};
+use iced::{Element, Subscription, Task};
+use iced::advanced::image::{Handle};
+use iced::widget::Image;
+
 use tokio::sync::watch;
+use mermaid_rs::Mermaid;
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -51,8 +55,7 @@ impl AppState {
     }
 
     pub fn view<'a>(&self) -> Element<'_, Message> {
-        let mut view_struct = Column::new();
-
+        let mut view = Column::new();
         // 1) Top row: input + button
         let mut top_row = Row::new().spacing(5).padding(8);
         top_row = top_row.push(text_input("Enter project path...", &self.input_value).on_input(|x| Message::UpdateInputVal(x)));
@@ -62,20 +65,15 @@ impl AppState {
                 false => button("Analyze").on_press(Message::AskDependency),
             }
         );
+        view = view.push(top_row);
 
-        view_struct = view_struct.push(top_row);
+        let mermaid = Mermaid::new().unwrap();
+        let svg = mermaid.render("flowchart TD\na --> b\n").unwrap();
+        let handle = Handle::from_bytes(svg.as_bytes());
 
-        // 2) Scrollable list of dependencies
-        let mut deps_column = Column::new().spacing(5).padding(10);
+        view = view.push(Image::new(handle));
 
-        for (to, into) in self.project_dependencies.read().unwrap().clone() {
-            let s = format!("{to} -> {into}");
-            deps_column = deps_column.push(Text::new(s));
-        }
-
-        view_struct = view_struct.push(deps_column);
-
-        view_struct.into()
+        view.into()
     }
 
     pub fn update(&mut self, message: Message) -> Task<Message> {

@@ -1,7 +1,6 @@
 use std::{
     collections::HashSet, fs::File, io::{self, BufRead}, path::{Path, PathBuf}, sync::{Arc, RwLock},
 };
-
 use lazy_static::lazy_static;
 use regex::Regex;
 use walkdir::WalkDir;
