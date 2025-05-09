@@ -55,7 +55,7 @@ impl AppState {
     }
 
     pub fn view<'a>(&self) -> Element<'_, Message> {
-        let mut deps_column = Column::new().spacing(5).padding(10);
+        // let mut deps_column = Column::new().spacing(5).padding(10);
         
         // 1) Top row: input + button
         let mut top_row = Row::new().spacing(5).padding(8);
@@ -67,22 +67,23 @@ impl AppState {
             }
         );
         let mermaid = Mermaid::new().unwrap();
-        let svg = mermaid.render("flowchart TD\na --> b\n").unwrap();
-        let handle = Handle::from_bytes(svg.as_bytes());
+        let svg= mermaid.render("flowchart TD\na --> b\n").unwrap();
+        let boxed_bytes = svg.into_bytes().into_boxed_slice();
+        let static_bytes: &'static [u8] = Box::leak(boxed_bytes);
+        let handle = Handle::from_bytes(static_bytes);
 
-        // TODO  = view = view.push(Image::new(handle));
         // 2) Scrollable list of dependencies
 
         for (to, into) in self.project_dependencies.read().unwrap().clone() {
             let s = format!("{to} -> {into}");
-            deps_column = deps_column.push(Text::new(s));
+            // deps_column = deps_column.push(Text::new(s));
         }
 
-        let scroll = Scrollable::new(deps_column)
-            .width(Length::Fill)
-            .height(Length::Fill);
+        // let scroll = Scrollable::new(deps_column)
+        //     .width(Length::Fill)
+        //     .height(Length::Fill);
 
-        container(Column::new().push(top_row).push(scroll).spacing(10))
+        container(Column::new().push(top_row).push(Image::new(handle)).spacing(10))
             .width(Length::Fill)
             .height(Length::Fill)
             .padding(20)
