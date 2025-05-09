@@ -181,5 +181,5 @@ async fn send_update(
         deps.push((fqcn, ty));
     }
     watcher.send(()).unwrap_or_else(|_| ());
-    tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 }

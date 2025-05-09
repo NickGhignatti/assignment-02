@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
+use iced::{Element, Length, Subscription, Task};
+use iced::widget::{button, container, text_input, Column, Row, Scrollable, Text};
 use crate::dependency::build_dependency_graph;
 use iced::futures::stream;
-use iced::widget::{button, text_input, Column, Row};
-use iced::{Element, Subscription, Task};
 use iced::advanced::image::{Handle};
 use iced::widget::Image;
 
@@ -55,7 +55,8 @@ impl AppState {
     }
 
     pub fn view<'a>(&self) -> Element<'_, Message> {
-        let mut view = Column::new();
+        let mut deps_column = Column::new().spacing(5).padding(10);
+        
         // 1) Top row: input + button
         let mut top_row = Row::new().spacing(5).padding(8);
         top_row = top_row.push(text_input("Enter project path...", &self.input_value).on_input(|x| Message::UpdateInputVal(x)));
@@ -65,15 +66,27 @@ impl AppState {
                 false => button("Analyze").on_press(Message::AskDependency),
             }
         );
-        view = view.push(top_row);
-
         let mermaid = Mermaid::new().unwrap();
         let svg = mermaid.render("flowchart TD\na --> b\n").unwrap();
         let handle = Handle::from_bytes(svg.as_bytes());
 
-        view = view.push(Image::new(handle));
+        // TODO  = view = view.push(Image::new(handle));
+        // 2) Scrollable list of dependencies
 
-        view.into()
+        for (to, into) in self.project_dependencies.read().unwrap().clone() {
+            let s = format!("{to} -> {into}");
+            deps_column = deps_column.push(Text::new(s));
+        }
+
+        let scroll = Scrollable::new(deps_column)
+            .width(Length::Fill)
+            .height(Length::Fill);
+
+        container(Column::new().push(top_row).push(scroll).spacing(10))
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .padding(20)
+            .into()
     }
 
     pub fn update(&mut self, message: Message) -> Task<Message> {
@@ -83,6 +96,8 @@ impl AppState {
                 Task::none()
             }
             Message::AskDependency => {
+                self.project_dependencies.write().unwrap().clear();
+
                 let path = PathBuf::from(self.input_value.clone());
                 if !path.exists() {
                     return Task::none();
