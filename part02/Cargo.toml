@@ -11,3 +11,4 @@ walkdir = "2.5.0"
 tokio = { version = "1.45", features = ["sync"]}
 lazy_static = "1.5.0"
 mermaid-rs = "0.1.1"
+xmltree = "0.11.0"
